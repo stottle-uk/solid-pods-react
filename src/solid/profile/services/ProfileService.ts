@@ -1,7 +1,8 @@
-import { Fetcher, graph, Namespace, st, sym, UpdateManager } from 'rdflib';
+import { Fetcher, Namespace, st, sym, UpdateManager } from 'rdflib';
 
 export class ProfileService {
-  store = graph();
+  constructor(private store: any) {}
+
   getProfile(webId: string): Promise<any> {
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
     const fetcher = new Fetcher(this.store);
@@ -40,7 +41,7 @@ export class ProfileService {
         console.log(ok);
         console.log(message);
 
-        if (ok) console.log('Name changed to ' + 'name');
+        if (ok) console.log('Name changed');
         else alert(message);
       }
     );

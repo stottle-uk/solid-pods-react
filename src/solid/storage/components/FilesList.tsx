@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { FilesService } from '../services/FilesService';
+import { filesService } from '../../shared';
+import FileUploader from './FileUploader';
 
 const FilesList: React.FC = () => {
   const [files, setFiles] = useState<any[]>([]);
   const getFilesEffect = () => {
-    const service = new FilesService();
-    service
+    filesService
       .getFiles()
 
       .then((files: any) => {
@@ -16,22 +16,28 @@ const FilesList: React.FC = () => {
   useEffect(getFilesEffect, []);
 
   const deleteFile = (file: string) => {
-    const service = new FilesService();
-    service.deleteFile(file);
+    filesService.deleteFile(file);
   };
 
   const downloadFile = (file: string) => {
-    const service = new FilesService();
-    service.getFile(file);
+    filesService.getFile(file);
   };
 
   const addFolder = () => {
-    const service = new FilesService();
-    service.addFolder('https://stottle.inrupt.net/private/newFolder2/1/2/3/4');
+    filesService.addFolder(
+      'https://stottle.inrupt.net/private/newFolder2/1/2/3/4'
+    );
+  };
+
+  const onFilesSelected = (files: FileList) => {
+    filesService.uploadFiles(files);
   };
 
   return (
     <div className="files-list">
+      <div>
+        <FileUploader onFilesSelected={onFilesSelected} />
+      </div>
       <button onClick={() => addFolder()}>add</button>
       {files.map(f => {
         return (

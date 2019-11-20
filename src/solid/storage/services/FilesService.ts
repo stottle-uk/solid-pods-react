@@ -1,16 +1,17 @@
-import { Fetcher, graph, Namespace, sym } from 'rdflib';
+import { Fetcher, Namespace, sym } from 'rdflib';
 import auth from 'solid-auth-client';
 
 export class FilesService {
+  constructor(private store: any) {}
+
   getFiles() {
     const folder = sym('https://stottle.inrupt.net/private/');
-    const store = graph();
-    const fetcher = new Fetcher(store);
+    const fetcher = new Fetcher(this.store);
     const LDP = Namespace('http://www.w3.org/ns/ldp#');
 
     return fetcher
       .load(folder)
-      .then(() => store.match(folder, LDP('contains')));
+      .then(() => this.store.match(folder, LDP('contains')));
   }
 
   deleteFile(filePath: string) {

@@ -1,12 +1,14 @@
 import React, { useRef } from 'react';
-import { FilesService } from '../services/FilesService';
 
-const FileUploader: React.FC = () => {
+interface OwnProps {
+  onFilesSelected: (files: FileList) => void;
+}
+
+const FileUploader: React.FC<OwnProps> = ({ onFilesSelected }) => {
   const inputFileRef = useRef<HTMLInputElement>(null);
 
   const uploadFiles = (files: FileList | null) => {
-    const service = new FilesService();
-    files && service.uploadFiles(files);
+    files && onFilesSelected(files);
   };
 
   const showFileDialog = () =>

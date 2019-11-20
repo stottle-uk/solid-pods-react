@@ -3,7 +3,6 @@ import auth from 'solid-auth-client';
 import './App.css';
 import UserProfile from './solid/profile/components/UserProfile';
 import FilesList from './solid/storage/components/FilesList';
-import FileUploader from './solid/storage/components/FileUploader';
 
 const App: React.FC = () => {
   auth.trackSession(session => {
@@ -25,9 +24,6 @@ const App: React.FC = () => {
       <hr />
       <div>
         <UserProfile />
-      </div>
-      <div>
-        <FileUploader />
       </div>
       <hr />
       <div>
