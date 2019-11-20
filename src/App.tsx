@@ -2,6 +2,8 @@ import { Fetcher, graph, Namespace, sym } from 'rdflib';
 import React from 'react';
 import auth from 'solid-auth-client';
 import './App.css';
+import FilesList from './solid/components/FilesList';
+import FileUploader from './solid/components/FileUploader';
 
 const App: React.FC = () => {
   auth.trackSession(session => {
@@ -47,9 +49,16 @@ const App: React.FC = () => {
   const logout = () => auth.logout();
 
   return (
-    <div className='App'>
+    <div className="App">
       <button onClick={signIn}>Sign in</button>
       <button onClick={logout}>Logout</button>
+      <div>
+        <FileUploader />
+      </div>
+      <hr />
+      <div>
+        <FilesList />
+      </div>
     </div>
   );
 };
