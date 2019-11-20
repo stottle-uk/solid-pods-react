@@ -5,8 +5,6 @@ const service = new ProfileService();
 
 const UserProfile: React.FC = () => {
   const [profile, setProfile] = useState<any>();
-  console.log(service);
-
   const getProfileEffect = () => {
     service
       .getProfile('https://stottle.inrupt.net/profile/card#me')
@@ -23,6 +21,9 @@ const UserProfile: React.FC = () => {
 
   return (
     <div>
+      {profile && (
+        <img src={profile.hasPhoto[0].object.value} alt="Profile Image" />
+      )}
       <pre>{JSON.stringify(profile, undefined, 2)}</pre>
       <button onClick={() => updateProfile()}>Update</button>
     </div>
