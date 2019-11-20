@@ -1362,6 +1362,13 @@
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.2.tgz#690a1475b84f2a884fd07cd797c00f5f31356ea8"
   integrity sha512-ce5d3q03Ex0sy4R14722Rmt6MT07Ua+k4FwDfdcToYJcMKNtRVQvJ6JCAPdAmAnbRb6CsX6aYb9m96NGod9uTw==
 
+"@types/rdflib@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@types/rdflib/-/rdflib-1.0.5.tgz#cbd07c6e1d011ae7d15ae13639a4ebb454c99eab"
+  integrity sha512-rsYG0JaezYmQmh3sTP7CrYlFxOi45+p87yTyuQSWyYLNccGNXWYn6Cnrl/RKfK1zNEU8LH7bQ8tJNIIA0Vu3eQ==
+  dependencies:
+    rdflib "*"
+
 "@types/react-dom@16.9.4":
   version "16.9.4"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-16.9.4.tgz#0b58df09a60961dcb77f62d4f1832427513420df"
@@ -5931,7 +5938,7 @@ jsonify@~0.0.0:
   resolved "https://registry.yarnpkg.com/jsonify/-/jsonify-0.0.0.tgz#2c74b6ee41d93ca51b7b5aaee8f503631d252a73"
   integrity sha1-LHS27kHZPKUbe1qu6PUDYx0lKnM=
 
-jsonld@^1.4.0, jsonld@^1.6.2:
+jsonld@^1.4.0, jsonld@^1.6.2, jsonld@^1.8.0:
   version "1.8.1"
   resolved "https://registry.yarnpkg.com/jsonld/-/jsonld-1.8.1.tgz#55ea541b22b8af5a5d6a5e32328e3f2678148882"
   integrity sha512-f0rusl5v8aPKS3jApT5fhYsdTC/JpyK1PoJ+ZtYYtZXoyb1J0Z///mJqLwrfL/g4NueFSqPymDYIi1CcSk7b8Q==
@@ -8203,7 +8210,7 @@ rdf-canonize@^1.0.2:
     node-forge "^0.8.1"
     semver "^5.6.0"
 
-rdflib@^1.0.6:
+rdflib@*:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/rdflib/-/rdflib-1.0.6.tgz#d0531d39c8a519bb4353fb17d445fb8f634f02ff"
   integrity sha512-j7seUD0l/xG6pNOgY2kMGre5s3r410ojVBvkpPSqmG1asMmJylMrY65xDYHrGlrIeI1W/bmE2ti5uImv8vs8vw==
@@ -8211,6 +8218,19 @@ rdflib@^1.0.6:
     "@babel/runtime" "^7.5.5"
     async "^3.1.x"
     jsonld "^1.6.2"
+    n3 "^1.2.0"
+    solid-auth-cli "^1.0.8"
+    solid-auth-client "^2.3.0"
+    xmldom "^0.1.27"
+
+rdflib@1.0.7-1:
+  version "1.0.7-1"
+  resolved "https://registry.yarnpkg.com/rdflib/-/rdflib-1.0.7-1.tgz#391b13a98b79a86ed043e9db7b8d6561c156616c"
+  integrity sha512-TaD8GtqLTcLgSAZd0e6Ki+s4TT4UlGpnUyqiA3ozQRD7ity8b2MJyr9ZJDZTNdrGXW8TiUWh7FojqyYD00J0yw==
+  dependencies:
+    "@babel/runtime" "^7.5.5"
+    async "^3.1.x"
+    jsonld "^1.8.0"
     n3 "^1.2.0"
     solid-auth-cli "^1.0.8"
     solid-auth-client "^2.3.0"

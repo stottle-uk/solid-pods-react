@@ -1,5 +1,9 @@
 I don't know what my WebId should be for the login...
 
+FAFFED around until i found a version of rdflib that worked with typescript
+
+---
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
