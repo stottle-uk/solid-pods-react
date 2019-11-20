@@ -5,7 +5,7 @@ export class FilesService {
   constructor(private store: any) {}
 
   getFiles() {
-    const folder = sym('https://stottle.inrupt.net/private/');
+    const folder = sym('https://stottle.inrupt.net/profile/');
     const fetcher = new Fetcher(this.store);
     const LDP = Namespace('http://www.w3.org/ns/ldp#');
 

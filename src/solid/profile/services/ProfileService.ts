@@ -1,4 +1,5 @@
 import { Fetcher, Namespace, st, sym, UpdateManager } from 'rdflib';
+import auth from 'solid-auth-client';
 
 export class ProfileService {
   constructor(private store: any) {}
@@ -25,13 +26,51 @@ export class ProfileService {
     });
   }
 
+  updateProfileImage(files: FileList) {
+    const reader = new FileReader();
+
+    const file = files.item(0);
+
+    if (file) {
+      reader.onload = f => {
+        if (f.target) {
+          const data = f.target.result;
+
+          const newFileName = new Date().getTime() + file.name;
+
+          // Get destination file url
+          const fileBase = 'https://stottle.inrupt.net/profile';
+          const destinationUri = `${fileBase}/${encodeURIComponent(
+            newFileName
+          )}`;
+
+          auth.fetch(destinationUri, {
+            method: 'PUT',
+            headers: {
+              'content-type': file.type,
+              credentials: 'include'
+            },
+            body: data
+          });
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
   updateProfile() {
     const updater = new UpdateManager(this.store);
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
     const me = this.store.sym('https://stottle.inrupt.net/profile/card#me');
 
-    let ins = st(me, VCARD('fn'), 'new name ' + new Date().getTime(), me.doc());
-    let del = this.store.statementsMatching(me, VCARD('fn'), null, me.doc()); // null is wildcard
+    let ins = st(me, VCARD('hasPhoto'), '4807 TRO.jpg', me.doc());
+    let del = this.store.statementsMatching(
+      me,
+      VCARD('hasPhoto'),
+      null,
+      me.doc()
+    ); // null is wildcard
     updater.update(
       del,
       ins,

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { filesService } from '../../shared';
-import FileUploader from './FileUploader';
+import { filesService, FileUploader } from '../../shared';
 
 const FilesList: React.FC = () => {
   const [files, setFiles] = useState<any[]>([]);
