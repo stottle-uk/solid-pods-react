@@ -3,6 +3,7 @@ import { combineLatest, from, merge, Observable, Subject } from 'rxjs';
 import { map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
 import auth from 'solid-auth-client';
 import { AuthService } from '../../auth/services/AuthService';
+import { fileReader } from '../../shared/operators/operators';
 import { ProfileCard, UpdateProfileCard } from '../types/profile';
 
 export class ProfileService {
@@ -75,7 +76,7 @@ export class ProfileService {
   }
 
   private updateProfileImage(file: File): Observable<UpdateProfileCard> {
-    return this.fileReader(file).pipe(
+    return fileReader(file).pipe(
       switchMap(data => {
         const fileBase = 'https://stottle.solid.community/profile';
         const destinationUri = `${fileBase}/${encodeURIComponent(file.name)}`;
@@ -126,18 +127,6 @@ export class ProfileService {
           }
         }
       );
-    });
-  }
-
-  private fileReader(file: File) {
-    return new Observable<string | ArrayBuffer | null>(observer => {
-      const reader = new FileReader();
-      reader.onload = f => {
-        if (f.target) {
-          observer.next(f.target.result);
-        }
-      };
-      reader.readAsArrayBuffer(file);
     });
   }
 }
