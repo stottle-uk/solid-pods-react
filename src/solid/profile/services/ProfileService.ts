@@ -1,31 +1,46 @@
 import { Fetcher, Namespace, st, sym, UpdateManager } from 'rdflib';
-import { from, Observable } from 'rxjs';
+import { from, Observable, Subject } from 'rxjs';
 import { map, mergeMap, switchMap } from 'rxjs/operators';
 import auth from 'solid-auth-client';
 
 export class ProfileService {
+  private fetcher = new Fetcher(this.store);
+  private updateManager = new UpdateManager(this.store);
+  private webIdInner$ = new Subject<string>();
+
+  profileCard$ = this.webId$.pipe(switchMap(webId => this.getProfile(webId)));
+
+  get webId$() {
+    return this.webIdInner$.asObservable();
+  }
+
   constructor(private store: any) {}
 
-  getProfile(webId: string): Promise<any> {
+  getProfileCard(webId: string) {
+    this.webIdInner$.next(webId);
+  }
+
+  private getProfile(webId: string) {
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
-    const fetcher = new Fetcher(this.store);
     const person = webId;
-    return fetcher.load(person).then(() => {
-      const personSym = sym(person);
-      const fullName = this.store.any(personSym, VCARD('fn'));
-      const hasPhoto = this.store.match(personSym, VCARD('hasPhoto'));
-      const note = this.store.any(personSym, VCARD('note'));
-      const organizationName = this.store.any(
-        personSym,
-        VCARD('organization-name')
-      );
-      return {
-        fullName,
-        hasPhoto,
-        note,
-        organizationName
-      };
-    });
+    return from(this.fetcher.load(person)).pipe(
+      map(() => {
+        const personSym = sym(person);
+        const fullName = this.store.any(personSym, VCARD('fn'));
+        const hasPhoto = this.store.any(personSym, VCARD('hasPhoto'));
+        const note = this.store.any(personSym, VCARD('note'));
+        const organizationName = this.store.any(
+          personSym,
+          VCARD('organization-name')
+        );
+        return {
+          fullName,
+          hasPhoto,
+          note,
+          organizationName
+        };
+      })
+    );
   }
 
   updateProfileImage(files: FileList): Observable<string> {
@@ -71,8 +86,7 @@ export class ProfileService {
 
   private update(del: any, ins: any) {
     return new Observable<string>(observer => {
-      const updater = new UpdateManager(this.store);
-      updater.update(
+      this.updateManager.update(
         del,
         ins,
         (uri: string, ok: boolean, message: string, response: any) => {

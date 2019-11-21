@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { useObservable } from 'rxjs-hooks';
 import { FileUploader, profileService } from '../../shared';
 
 const UserProfile: React.FC = () => {
-  const [profile, setProfile] = useState<any>();
+  const profile = useObservable(
+    () => profileService.profileCard$,
+    undefined,
+    []
+  );
   const getProfileEffect = () => {
-    profileService
-      .getProfile('https://stottle.solid.community/profile/card#me')
-      .then((profile: any) => {
-        setProfile(profile);
-      });
+    profileService.getProfileCard(
+      'https://stottle.solid.community/profile/card#me'
+    );
   };
   useEffect(getProfileEffect, []);
 
@@ -22,8 +25,8 @@ const UserProfile: React.FC = () => {
 
   return (
     <div>
-      {profile && profile.hasPhoto[0] && (
-        <img src={profile.hasPhoto[0].object.value} alt="Profile" />
+      {profile && profile.hasPhoto && (
+        <img src={profile.hasPhoto.value} alt="Profile" />
       )}
       <div>
         <FileUploader onFilesSelected={onFilesSelected} />
