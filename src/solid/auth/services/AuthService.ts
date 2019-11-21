@@ -1,12 +1,12 @@
-import auth from 'solid-auth-client';
+import { Observable, Subscriber } from 'rxjs';
+import { map } from 'rxjs/operators';
+import auth, { Session } from 'solid-auth-client';
 
 export class AuthService {
-  constructor(private store: any) {
-    auth.trackSession(session => {
-      if (!session) console.log('The user is not logged in');
-      else console.log(`The user is ${session.webId}`);
-    });
-  }
+  sessionStatus$ = new Observable<Session>(this.trackStatus);
+  isAuthenticated$ = this.sessionStatus$.pipe(map(session => !!session));
+
+  constructor(private store: any) {}
 
   //   register(idp: string): Promise<void> {
   //     return auth.(idp, {
@@ -22,5 +22,9 @@ export class AuthService {
 
   logout() {
     return auth.logout();
+  }
+
+  private trackStatus(observer: Subscriber<Session>) {
+    auth.trackSession(session => observer.next(session));
   }
 }
