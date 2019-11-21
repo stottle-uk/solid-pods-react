@@ -5,7 +5,7 @@ export class FilesService {
   constructor(private store: any) {}
 
   getFiles() {
-    const folder = sym('https://stottle.inrupt.net/profile/');
+    const folder = sym('https://stottle.solid.community/profile/');
     const fetcher = new Fetcher(this.store);
     const LDP = Namespace('http://www.w3.org/ns/ldp#');
 
@@ -54,7 +54,7 @@ export class FilesService {
           const newFileName = new Date().getTime() + file.name;
 
           // Get destination file url
-          const fileBase = 'https://stottle.inrupt.net/private';
+          const fileBase = 'https://stottle.solid.community/private';
           const destinationUri = `${fileBase}/${encodeURIComponent(
             newFileName
           )}`;

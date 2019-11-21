@@ -5,7 +5,7 @@ const UserProfile: React.FC = () => {
   const [profile, setProfile] = useState<any>();
   const getProfileEffect = () => {
     profileService
-      .getProfile('https://stottle.inrupt.net/profile/card#me')
+      .getProfile('https://stottle.solid.community/profile/card#me')
       .then((profile: any) => {
         console.log(profile);
         setProfile(profile);
@@ -23,7 +23,9 @@ const UserProfile: React.FC = () => {
 
   return (
     <div>
-      {profile && <img src={profile.hasPhoto[0].object.value} alt="Profile" />}
+      {profile && profile.hasPhoto[0] && (
+        <img src={profile.hasPhoto[0].object.value} alt="Profile" />
+      )}
       <div>
         <FileUploader onFilesSelected={onFilesSelected} />
       </div>

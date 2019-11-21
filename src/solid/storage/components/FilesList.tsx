@@ -24,7 +24,7 @@ const FilesList: React.FC = () => {
 
   const addFolder = () => {
     filesService.addFolder(
-      'https://stottle.inrupt.net/private/newFolder2/1/2/3/4'
+      'https://stottle.solid.community/private/newFolder2/1/2/3/4'
     );
   };
 

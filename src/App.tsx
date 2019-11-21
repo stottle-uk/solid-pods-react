@@ -11,7 +11,7 @@ const App: React.FC = () => {
   });
 
   const signIn = () =>
-    auth.login('https://stottle.inrupt.net/', {
+    auth.login('https://stottle.solid.community/', {
       callbackUri: 'http://localhost:3000'
     });
 

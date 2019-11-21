@@ -39,7 +39,7 @@ export class ProfileService {
           const newFileName = new Date().getTime() + file.name;
 
           // Get destination file url
-          const fileBase = 'https://stottle.inrupt.net/profile';
+          const fileBase = 'https://stottle.solid.community/profile';
           const destinationUri = `${fileBase}/${encodeURIComponent(
             newFileName
           )}`;
@@ -62,9 +62,16 @@ export class ProfileService {
   updateProfile() {
     const updater = new UpdateManager(this.store);
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
-    const me = this.store.sym('https://stottle.inrupt.net/profile/card#me');
+    const me = this.store.sym(
+      'https://stottle.solid.community/profile/card#me'
+    );
 
-    let ins = st(me, VCARD('hasPhoto'), '4807 TRO.jpg', me.doc());
+    let ins = st(
+      me,
+      VCARD('hasPhoto'),
+      'https://stottle.solid.community/profile/15743271727334807_TRO.jpg',
+      me.doc()
+    );
     let del = this.store.statementsMatching(
       me,
       VCARD('hasPhoto'),
