@@ -1,21 +1,12 @@
 import React from 'react';
-import auth from 'solid-auth-client';
 import './App.css';
 import UserProfile from './solid/profile/components/UserProfile';
+import { authService } from './solid/shared';
 import FilesList from './solid/storage/components/FilesList';
 
 const App: React.FC = () => {
-  auth.trackSession(session => {
-    if (!session) console.log('The user is not logged in');
-    else console.log(`The user is ${session.webId}`);
-  });
-
-  const signIn = () =>
-    auth.login('https://stottle.solid.community/', {
-      callbackUri: 'http://localhost:3000'
-    });
-
-  const logout = () => auth.logout();
+  const signIn = () => authService.signIn('https://stottle.solid.community/');
+  const logout = () => authService.logout();
 
   return (
     <div className="App">
