@@ -1,26 +1,57 @@
 import { Fetcher, Namespace, st, sym, UpdateManager } from 'rdflib';
-import { from, Observable, Subject } from 'rxjs';
-import { map, mergeMap, switchMap } from 'rxjs/operators';
+import { combineLatest, from, merge, Observable, Subject } from 'rxjs';
+import { map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
 import auth from 'solid-auth-client';
+import { AuthService } from '../../auth/services/AuthService';
+import { ProfileCard, UpdateProfileCard } from '../types/profile';
 
 export class ProfileService {
   private fetcher = new Fetcher(this.store);
   private updateManager = new UpdateManager(this.store);
-  private webIdInner$ = new Subject<string>();
+  private updateProfileCardValueInner$ = new Subject<UpdateProfileCard>();
+  private uploadQueueInner$ = new Subject<FileList>();
 
-  profileCard$ = this.webId$.pipe(switchMap(webId => this.getProfile(webId)));
+  profileImageUpdate$ = this.uploadQueue$.pipe(
+    mergeMap(files =>
+      from(files).pipe(switchMap(file => this.updateProfileImage(file)))
+    )
+  );
 
-  get webId$() {
-    return this.webIdInner$.asObservable();
+  profileCardUpdate$ = merge(
+    this.updateProfileCardValue$,
+    this.profileImageUpdate$
+  ).pipe(
+    switchMap(value => this.updateProfile(value.statement, value.value)),
+    startWith('')
+  );
+
+  profileCard$ = combineLatest(
+    this.authService.webId$,
+    this.profileCardUpdate$
+  ).pipe(
+    map(([webId]) => webId),
+    switchMap(webId => this.getProfile(webId))
+  );
+
+  get updateProfileCardValue$() {
+    return this.updateProfileCardValueInner$.asObservable();
   }
 
-  constructor(private store: any) {}
-
-  getProfileCard(webId: string) {
-    this.webIdInner$.next(webId);
+  get uploadQueue$() {
+    return this.uploadQueueInner$.asObservable();
   }
 
-  private getProfile(webId: string) {
+  constructor(private store: any, private authService: AuthService) {}
+
+  updateProfileCardValue(value: UpdateProfileCard) {
+    this.updateProfileCardValueInner$.next(value);
+  }
+
+  updateProfileCardImage(files: FileList) {
+    this.uploadQueueInner$.next(files);
+  }
+
+  private getProfile(webId: string): Observable<ProfileCard> {
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
     const person = webId;
     return from(this.fetcher.load(person)).pipe(
@@ -43,33 +74,31 @@ export class ProfileService {
     );
   }
 
-  updateProfileImage(files: FileList): Observable<string> {
-    return from(files).pipe(
-      mergeMap(file =>
-        this.fileReader(file).pipe(
-          switchMap(data => {
-            const fileBase = 'https://stottle.solid.community/profile';
-            const destinationUri = `${fileBase}/${encodeURIComponent(
-              file.name
-            )}`;
-            return from(
-              auth.fetch(destinationUri, {
-                method: 'PUT',
-                headers: {
-                  'content-type': file.type,
-                  credentials: 'include'
-                },
-                body: data
-              })
-            ).pipe(map(() => destinationUri));
-          }),
-          switchMap(filename => this.updateProfile('hasPhoto', filename))
-        )
-      )
+  private updateProfileImage(file: File): Observable<UpdateProfileCard> {
+    return this.fileReader(file).pipe(
+      switchMap(data => {
+        const fileBase = 'https://stottle.solid.community/profile';
+        const destinationUri = `${fileBase}/${encodeURIComponent(file.name)}`;
+        return from(
+          auth.fetch(destinationUri, {
+            method: 'PUT',
+            headers: {
+              'content-type': file.type,
+              credentials: 'include'
+            },
+            body: data
+          })
+        ).pipe(
+          map(() => ({
+            statement: 'hasPhoto',
+            value: destinationUri
+          }))
+        );
+      })
     );
   }
 
-  updateProfile(statement: string, value: string) {
+  private updateProfile(statement: string, value: string) {
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
     const me = this.store.sym(
       'https://stottle.solid.community/profile/card#me'
@@ -81,7 +110,7 @@ export class ProfileService {
       null,
       me.doc()
     );
-    return this.update(del, ins);
+    return this.update(del, ins).pipe(tap(console.log));
   }
 
   private update(del: any, ins: any) {
@@ -89,9 +118,7 @@ export class ProfileService {
       this.updateManager.update(
         del,
         ins,
-        (uri: string, ok: boolean, message: string, response: any) => {
-          console.log(uri);
-
+        (uri: string, ok: boolean, message: string) => {
           if (ok) {
             observer.next(message);
           } else {

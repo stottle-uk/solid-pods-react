@@ -3,7 +3,6 @@ import { useObservable } from 'rxjs-hooks';
 import './App.css';
 import UserProfile from './solid/profile/components/UserProfile';
 import { authService } from './solid/shared';
-import FilesList from './solid/storage/components/FilesList';
 
 const App: React.FC = () => {
   const isAuthenticated = useObservable(
@@ -25,9 +24,7 @@ const App: React.FC = () => {
         <UserProfile />
       </div>
       <hr />
-      <div>
-        <FilesList />
-      </div>
+      <div>{/* <FilesList /> */}</div>
     </div>
   );
 };

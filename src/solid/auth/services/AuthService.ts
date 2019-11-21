@@ -1,10 +1,14 @@
 import { Observable, Subscriber } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 import auth, { Session } from 'solid-auth-client';
 
 export class AuthService {
   sessionStatus$ = new Observable<Session>(this.trackStatus);
   isAuthenticated$ = this.sessionStatus$.pipe(map(session => !!session));
+  webId$ = this.sessionStatus$.pipe(
+    filter(session => !!session),
+    map(session => session.webId)
+  );
 
   constructor(private store: any) {}
 
