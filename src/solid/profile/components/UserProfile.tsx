@@ -7,18 +7,17 @@ const UserProfile: React.FC = () => {
     profileService
       .getProfile('https://stottle.solid.community/profile/card#me')
       .then((profile: any) => {
-        console.log(profile);
         setProfile(profile);
       });
   };
   useEffect(getProfileEffect, []);
 
   const updateProfile = () => {
-    profileService.updateProfile();
+    profileService.updateProfile('fn', 'Stuart Tottle').subscribe(console.log);
   };
 
   const onFilesSelected = (files: FileList) => {
-    profileService.updateProfileImage(files);
+    profileService.updateProfileImage(files).subscribe(console.log);
   };
 
   return (

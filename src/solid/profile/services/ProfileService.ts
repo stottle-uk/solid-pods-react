@@ -1,4 +1,6 @@
 import { Fetcher, Namespace, st, sym, UpdateManager } from 'rdflib';
+import { from, Observable } from 'rxjs';
+import { map, mergeMap, switchMap } from 'rxjs/operators';
 import auth from 'solid-auth-client';
 
 export class ProfileService {
@@ -26,70 +28,75 @@ export class ProfileService {
     });
   }
 
-  updateProfileImage(files: FileList) {
-    const reader = new FileReader();
-
-    const file = files.item(0);
-
-    if (file) {
-      reader.onload = f => {
-        if (f.target) {
-          const data = f.target.result;
-
-          const newFileName = new Date().getTime() + file.name;
-
-          // Get destination file url
-          const fileBase = 'https://stottle.solid.community/profile';
-          const destinationUri = `${fileBase}/${encodeURIComponent(
-            newFileName
-          )}`;
-
-          auth.fetch(destinationUri, {
-            method: 'PUT',
-            headers: {
-              'content-type': file.type,
-              credentials: 'include'
-            },
-            body: data
-          });
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    }
+  updateProfileImage(files: FileList): Observable<string> {
+    return from(files).pipe(
+      mergeMap(file =>
+        this.fileReader(file).pipe(
+          switchMap(data => {
+            const fileBase = 'https://stottle.solid.community/profile';
+            const destinationUri = `${fileBase}/${encodeURIComponent(
+              file.name
+            )}`;
+            return from(
+              auth.fetch(destinationUri, {
+                method: 'PUT',
+                headers: {
+                  'content-type': file.type,
+                  credentials: 'include'
+                },
+                body: data
+              })
+            ).pipe(map(() => destinationUri));
+          }),
+          switchMap(filename => this.updateProfile('hasPhoto', filename))
+        )
+      )
+    );
   }
 
-  updateProfile() {
-    const updater = new UpdateManager(this.store);
+  updateProfile(statement: string, value: string) {
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
     const me = this.store.sym(
       'https://stottle.solid.community/profile/card#me'
     );
-
-    let ins = st(
-      me,
-      VCARD('hasPhoto'),
-      'https://stottle.solid.community/profile/15743271727334807_TRO.jpg',
-      me.doc()
-    );
+    let ins = st(me, VCARD(statement), value, me.doc());
     let del = this.store.statementsMatching(
       me,
-      VCARD('hasPhoto'),
+      VCARD(statement),
       null,
       me.doc()
-    ); // null is wildcard
-    updater.update(
-      del,
-      ins,
-      (uri: string, ok: boolean, message: string, response: any) => {
-        console.log(response);
-        console.log(uri);
-        console.log(ok);
-        console.log(message);
-
-        if (ok) console.log('Name changed');
-        else alert(message);
-      }
     );
+    return this.update(del, ins);
+  }
+
+  private update(del: any, ins: any) {
+    return new Observable<string>(observer => {
+      const updater = new UpdateManager(this.store);
+      updater.update(
+        del,
+        ins,
+        (uri: string, ok: boolean, message: string, response: any) => {
+          console.log(uri);
+
+          if (ok) {
+            observer.next(message);
+          } else {
+            observer.error(message);
+          }
+        }
+      );
+    });
+  }
+
+  private fileReader(file: File) {
+    return new Observable<string | ArrayBuffer | null>(observer => {
+      const reader = new FileReader();
+      reader.onload = f => {
+        if (f.target) {
+          observer.next(f.target.result);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
   }
 }
