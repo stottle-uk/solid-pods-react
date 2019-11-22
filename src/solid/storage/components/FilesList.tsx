@@ -17,9 +17,7 @@ const FilesList: React.FC = () => {
   };
 
   const addFolder = () => {
-    filesService.addFolder(
-      'https://stottle.solid.community/private/newFolder2/1/2/3/4'
-    );
+    filesService.addFolder('newFolder3');
   };
 
   const onFilesSelected = (files: FileList) => filesService.uploadFiles(files);

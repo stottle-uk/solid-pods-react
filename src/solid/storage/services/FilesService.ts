@@ -1,22 +1,51 @@
 import { Fetcher, Namespace, sym } from 'rdflib';
-import { combineLatest, from, Subject } from 'rxjs';
-import { map, mergeMap, startWith, switchMap } from 'rxjs/operators';
+import { combineLatest, from, merge, of, Subject } from 'rxjs';
+import {
+  map,
+  mergeMap,
+  startWith,
+  switchMap,
+  withLatestFrom
+} from 'rxjs/operators';
 import auth from 'solid-auth-client';
 import { fileReader } from '../../shared/operators/operators';
 
 export class FilesService {
+  private fetcher = new Fetcher(this.store);
   private currentFolderInner$ = new Subject<string>();
   private uploadQueueInner$ = new Subject<FileList>();
+  private deleteItemInner$ = new Subject<string>();
+  private addFolderInner$ = new Subject<string>();
 
   uploadedFiles$ = this.uploadQueue$.pipe(
-    mergeMap(file => this.uploadFile(file)),
-    startWith('')
+    mergeMap(file => this.uploadFile(file))
   );
 
-  filesInFolder$ = combineLatest(this.currentFolder$, this.uploadedFiles$).pipe(
-    map(([folder]) => folder),
+  deletedFiles$ = this.deleteItem$.pipe(
+    mergeMap(file => this.deleteItem(file))
+  );
+
+  addedFolders$ = this.addFolder$.pipe(
+    mergeMap(folder => this.createFolder(folder))
+  );
+
+  actions$ = merge(
+    this.uploadedFiles$,
+    this.deletedFiles$,
+    this.addedFolders$
+  ).pipe(startWith(''));
+
+  filesInFolder$ = combineLatest(this.currentFolder$, this.actions$).pipe(
+    map(([folderName]) => folderName),
     switchMap(folder => this.getFiles(folder))
   );
+
+  get currentFolder$() {
+    return this.currentFolderInner$.asObservable().pipe(
+      startWith('public'),
+      map(folderName => `https://stottle.solid.community/${folderName}/`)
+    );
+  }
 
   get uploadQueue$() {
     return this.uploadQueueInner$
@@ -24,8 +53,12 @@ export class FilesService {
       .pipe(mergeMap(files => from(files)));
   }
 
-  get currentFolder$() {
-    return this.currentFolderInner$.asObservable().pipe(startWith('private'));
+  get deleteItem$() {
+    return this.deleteItemInner$.asObservable();
+  }
+
+  get addFolder$() {
+    return this.addFolderInner$.asObservable();
   }
 
   constructor(private store: any) {}
@@ -35,9 +68,15 @@ export class FilesService {
   }
 
   deleteFile(filePath: string) {
-    auth.fetch(filePath, {
-      method: 'DELETE'
-    });
+    this.deleteItemInner$.next(filePath);
+  }
+
+  addFolder(filePath: string) {
+    this.addFolderInner$.next(filePath);
+  }
+
+  deleteFolder(filePath: string) {
+    this.deleteItemInner$.next(filePath);
   }
 
   getFile(filePath: string) {
@@ -46,27 +85,16 @@ export class FilesService {
     });
   }
 
-  addFolder(root: string) {
-    auth.fetch(`${root}/.dummy`, {
-      method: 'PUT',
-      headers: {
-        credentials: 'include'
-      }
-    });
-  }
-
-  deleteFolder(filePath: string) {
-    auth.fetch(filePath, {
-      method: 'DELETE'
-    });
-  }
-
   private getFiles(folderName: string) {
-    const folder = sym(`https://stottle.solid.community/${folderName}/`);
-    const fetcher = new Fetcher(this.store);
+    const folder = sym(folderName);
     const LDP = Namespace('http://www.w3.org/ns/ldp#');
 
-    return from(fetcher.load(folder)).pipe(
+    return from(
+      this.fetcher.load(folder, {
+        force: true,
+        clearPreviousData: true
+      })
+    ).pipe(
       map(() => this.store.match(folder, LDP('contains'))),
       map(res => res as any[])
     );
@@ -74,23 +102,62 @@ export class FilesService {
 
   private uploadFile(file: File) {
     return fileReader(file).pipe(
-      switchMap(data => {
+      withLatestFrom(this.currentFolder$),
+      switchMap(([data, currentFolder]) => {
         const newFileName = new Date().getTime() + file.name;
 
-        // Get destination file url
-        const fileBase = 'https://stottle.solid.community/private';
-        const destinationUri = `${fileBase}/${encodeURIComponent(newFileName)}`;
+        const destinationUri = `${currentFolder}/${encodeURIComponent(
+          newFileName
+        )}`;
 
-        return from(
-          auth.fetch(destinationUri, {
-            method: 'PUT',
-            headers: {
-              'content-type': file.type,
-              credentials: 'include'
-            },
-            body: data
-          })
-        );
+        return this.addFile(destinationUri, file.type, data);
+      })
+    );
+  }
+
+  private createFolder(foldername: string) {
+    return of(foldername).pipe(
+      withLatestFrom(this.currentFolder$),
+      map(
+        ([foldername, currentFolder]) => `${currentFolder}/${foldername}/.dummy`
+      ),
+      switchMap(folderPath =>
+        this.addItem(folderPath).pipe(() => this.deleteItem(folderPath))
+      )
+    );
+  }
+
+  private addFile(
+    filePath: string,
+    contentType: string,
+    data: string | ArrayBuffer | null
+  ) {
+    return this.fetch(filePath, {
+      method: 'PUT',
+      headers: {
+        'content-type': contentType
+      },
+      body: data
+    });
+  }
+
+  private addItem(path: string) {
+    return this.fetch(path, {
+      method: 'PUT'
+    });
+  }
+
+  private deleteItem(filePath: string) {
+    return this.fetch(filePath, {
+      method: 'DELETE'
+    });
+  }
+
+  private fetch(filePath: string, init: RequestInit) {
+    return from(
+      auth.fetch(filePath, {
+        credentials: 'include',
+        ...init
       })
     );
   }
