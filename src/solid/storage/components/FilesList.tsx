@@ -1,18 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useObservable } from 'rxjs-hooks';
 import { filesService, FileUploader } from '../../shared';
 
-const FilesList: React.FC = () => {
-  const [files, setFiles] = useState<any[]>([]);
-  const getFilesEffect = () => {
-    filesService
-      .getFiles()
+const useFilesInFolder = () =>
+  useObservable(() => filesService.filesInFolder$, [], []);
 
-      .then((files: any) => {
-        console.log(files);
-        setFiles(files);
-      });
-  };
-  useEffect(getFilesEffect, []);
+const FilesList: React.FC = () => {
+  const files = useFilesInFolder();
 
   const deleteFile = (file: string) => {
     filesService.deleteFile(file);
@@ -28,9 +22,7 @@ const FilesList: React.FC = () => {
     );
   };
 
-  const onFilesSelected = (files: FileList) => {
-    filesService.uploadFiles(files);
-  };
+  const onFilesSelected = (files: FileList) => filesService.uploadFiles(files);
 
   return (
     <div className="files-list">

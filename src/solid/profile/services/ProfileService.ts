@@ -13,9 +13,7 @@ export class ProfileService {
   private uploadQueueInner$ = new Subject<FileList>();
 
   profileImageUpdate$ = this.uploadQueue$.pipe(
-    mergeMap(files =>
-      from(files).pipe(switchMap(file => this.updateProfileImage(file)))
-    )
+    switchMap(file => this.updateProfileImage(file))
   );
 
   profileCardUpdate$ = merge(
@@ -39,7 +37,9 @@ export class ProfileService {
   }
 
   get uploadQueue$() {
-    return this.uploadQueueInner$.asObservable();
+    return this.uploadQueueInner$
+      .asObservable()
+      .pipe(mergeMap(files => from(files)));
   }
 
   constructor(private store: any, private authService: AuthService) {}
