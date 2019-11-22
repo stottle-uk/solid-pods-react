@@ -12,10 +12,6 @@ const FilesList: React.FC = () => {
     filesService.deleteFile(file);
   };
 
-  const downloadFile = (file: string) => {
-    filesService.getFile(file);
-  };
-
   const addFolder = () => {
     filesService.addFolder('newFolder3');
   };
@@ -33,9 +29,6 @@ const FilesList: React.FC = () => {
           <div key={f.object.value}>
             <a href={f.object.value}>{f.object.value}</a>
             <button onClick={() => deleteFile(f.object.value)}>delete</button>
-            <button onClick={() => downloadFile(f.object.value)}>
-              download
-            </button>
           </div>
         );
       })}

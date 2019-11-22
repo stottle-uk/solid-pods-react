@@ -7,8 +7,6 @@ import { fileReader } from '../../shared/operators/operators';
 import { ProfileCard, UpdateProfileCard } from '../types/profile';
 
 export class ProfileService {
-  private fetcher = new Fetcher(this.store);
-  private updateManager = new UpdateManager(this.store);
   private updateProfileCardValueInner$ = new Subject<UpdateProfileCard>();
   private uploadQueueInner$ = new Subject<FileList>();
 
@@ -42,7 +40,12 @@ export class ProfileService {
       .pipe(mergeMap(files => from(files)));
   }
 
-  constructor(private store: any, private authService: AuthService) {}
+  constructor(
+    private store: any,
+    private fetcher: Fetcher,
+    private updateManager: UpdateManager,
+    private authService: AuthService
+  ) {}
 
   updateProfileCardValue(value: UpdateProfileCard) {
     this.updateProfileCardValueInner$.next(value);

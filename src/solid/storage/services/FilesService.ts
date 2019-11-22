@@ -5,13 +5,12 @@ import {
   mergeMap,
   startWith,
   switchMap,
+  tap,
   withLatestFrom
 } from 'rxjs/operators';
-import auth from 'solid-auth-client';
 import { fileReader } from '../../shared/operators/operators';
 
 export class FilesService {
-  private fetcher = new Fetcher(this.store);
   private currentFolderInner$ = new Subject<string>();
   private uploadQueueInner$ = new Subject<FileList>();
   private deleteItemInner$ = new Subject<string>();
@@ -36,14 +35,14 @@ export class FilesService {
   ).pipe(startWith(''));
 
   filesInFolder$ = combineLatest(this.currentFolder$, this.actions$).pipe(
-    map(([folderName]) => folderName),
+    map(([folderName]) => `${folderName}/`),
     switchMap(folder => this.getFiles(folder))
   );
 
   get currentFolder$() {
     return this.currentFolderInner$.asObservable().pipe(
       startWith('public'),
-      map(folderName => `https://stottle.solid.community/${folderName}/`)
+      map(folderName => `https://stottle.solid.community/${folderName}`)
     );
   }
 
@@ -61,7 +60,7 @@ export class FilesService {
     return this.addFolderInner$.asObservable();
   }
 
-  constructor(private store: any) {}
+  constructor(private fetcher: Fetcher) {}
 
   uploadFiles(files: FileList) {
     this.uploadQueueInner$.next(files);
@@ -79,12 +78,6 @@ export class FilesService {
     this.deleteItemInner$.next(filePath);
   }
 
-  getFile(filePath: string) {
-    auth.fetch(filePath, {
-      method: 'GET'
-    });
-  }
-
   private getFiles(folderName: string) {
     const folder = sym(folderName);
     const LDP = Namespace('http://www.w3.org/ns/ldp#');
@@ -95,7 +88,8 @@ export class FilesService {
         clearPreviousData: true
       })
     ).pipe(
-      map(() => this.store.match(folder, LDP('contains'))),
+      map(() => this.fetcher.store.match(folder, LDP('contains'))),
+      tap(console.log),
       map(res => res as any[])
     );
   }
@@ -118,11 +112,8 @@ export class FilesService {
   private createFolder(foldername: string) {
     return of(foldername).pipe(
       withLatestFrom(this.currentFolder$),
-      map(
-        ([foldername, currentFolder]) => `${currentFolder}/${foldername}/.dummy`
-      ),
-      switchMap(folderPath =>
-        this.addItem(folderPath).pipe(() => this.deleteItem(folderPath))
+      switchMap(([foldername, currentFolder]) =>
+        this.addItem(currentFolder, foldername)
       )
     );
   }
@@ -132,33 +123,17 @@ export class FilesService {
     contentType: string,
     data: string | ArrayBuffer | null
   ) {
-    return this.fetch(filePath, {
-      method: 'PUT',
-      headers: {
-        'content-type': contentType
-      },
-      body: data
-    });
+    const doc = sym(filePath);
+    return from(this.fetcher.createIfNotExists(doc, contentType, data));
   }
 
-  private addItem(path: string) {
-    return this.fetch(path, {
-      method: 'PUT'
-    });
+  private addItem(currentFolder: string, folderName: string) {
+    const doc = sym(`${currentFolder}/`);
+    return from(this.fetcher.createContainer(doc, folderName));
   }
 
   private deleteItem(filePath: string) {
-    return this.fetch(filePath, {
-      method: 'DELETE'
-    });
-  }
-
-  private fetch(filePath: string, init: RequestInit) {
-    return from(
-      auth.fetch(filePath, {
-        credentials: 'include',
-        ...init
-      })
-    );
+    const doc = sym(filePath);
+    return from(this.fetcher.delete(doc));
   }
 }

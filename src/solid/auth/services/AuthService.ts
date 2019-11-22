@@ -10,8 +10,6 @@ export class AuthService {
     map(session => session.webId)
   );
 
-  constructor(private store: any) {}
-
   //   register(idp: string): Promise<void> {
   //     return auth.(idp, {
   //       callbackUri: 'http://localhost:3000'
