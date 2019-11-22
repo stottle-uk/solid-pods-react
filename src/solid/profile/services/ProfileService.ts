@@ -1,7 +1,6 @@
 import { Fetcher, Namespace, st, sym, UpdateManager } from 'rdflib';
 import { combineLatest, from, merge, Observable, Subject } from 'rxjs';
 import { map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
-import auth from 'solid-auth-client';
 import { AuthService } from '../../auth/services/AuthService';
 import { fileReader } from '../../shared/operators/operators';
 import { ProfileCard, UpdateProfileCard } from '../types/profile';
@@ -41,7 +40,6 @@ export class ProfileService {
   }
 
   constructor(
-    private store: any,
     private fetcher: Fetcher,
     private updateManager: UpdateManager,
     private authService: AuthService
@@ -61,10 +59,10 @@ export class ProfileService {
     return from(this.fetcher.load(person)).pipe(
       map(() => {
         const personSym = sym(person);
-        const fullName = this.store.any(personSym, VCARD('fn'));
-        const hasPhoto = this.store.any(personSym, VCARD('hasPhoto'));
-        const note = this.store.any(personSym, VCARD('note'));
-        const organizationName = this.store.any(
+        const fullName = this.fetcher.store.any(personSym, VCARD('fn'));
+        const hasPhoto = this.fetcher.store.any(personSym, VCARD('hasPhoto'));
+        const note = this.fetcher.store.any(personSym, VCARD('note'));
+        const organizationName = this.fetcher.store.any(
           personSym,
           VCARD('organization-name')
         );
@@ -83,16 +81,9 @@ export class ProfileService {
       switchMap(data => {
         const fileBase = 'https://stottle.solid.community/profile';
         const destinationUri = `${fileBase}/${encodeURIComponent(file.name)}`;
-        return from(
-          auth.fetch(destinationUri, {
-            method: 'PUT',
-            headers: {
-              'content-type': file.type,
-              credentials: 'include'
-            },
-            body: data
-          })
-        ).pipe(
+        const doc = sym(destinationUri);
+
+        return from(this.fetcher.createIfNotExists(doc, file.type, data)).pipe(
           map(() => ({
             statement: 'hasPhoto',
             value: destinationUri
@@ -104,11 +95,11 @@ export class ProfileService {
 
   private updateProfile(statement: string, value: string) {
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
-    const me = this.store.sym(
+    const me = this.fetcher.store.sym(
       'https://stottle.solid.community/profile/card#me'
     );
     let ins = st(me, VCARD(statement), value, me.doc());
-    let del = this.store.statementsMatching(
+    let del = this.fetcher.store.statementsMatching(
       me,
       VCARD(statement),
       null,

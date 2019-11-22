@@ -5,7 +5,6 @@ import {
   mergeMap,
   startWith,
   switchMap,
-  tap,
   withLatestFrom
 } from 'rxjs/operators';
 import { fileReader } from '../../shared/operators/operators';
@@ -89,7 +88,6 @@ export class FilesService {
       })
     ).pipe(
       map(() => this.fetcher.store.match(folder, LDP('contains'))),
-      tap(console.log),
       map(res => res as any[])
     );
   }

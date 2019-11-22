@@ -10,7 +10,6 @@ const updateManager = new UpdateManager(store);
 export const authService = new AuthService();
 export const filesService = new FilesService(fetcher);
 export const profileService = new ProfileService(
-  store,
   fetcher,
   updateManager,
   authService
