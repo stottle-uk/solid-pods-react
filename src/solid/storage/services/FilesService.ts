@@ -1,4 +1,4 @@
-import { Fetcher, Namespace, sym } from 'rdflib';
+import { Namespace, sym } from 'rdflib';
 import { combineLatest, from, merge, of, Subject } from 'rxjs';
 import {
   map,
@@ -8,6 +8,7 @@ import {
   withLatestFrom
 } from 'rxjs/operators';
 import { fileReader } from '../../shared/operators/operators';
+import { PodService } from '../../shared/services/PodService';
 
 export class FilesService {
   private currentFolderInner$ = new Subject<string>();
@@ -59,7 +60,7 @@ export class FilesService {
     return this.addFolderInner$.asObservable();
   }
 
-  constructor(private fetcher: Fetcher) {}
+  constructor(private podService: PodService) {}
 
   uploadFiles(files: FileList) {
     this.uploadQueueInner$.next(files);
@@ -81,13 +82,8 @@ export class FilesService {
     const folder = sym(folderName);
     const LDP = Namespace('http://www.w3.org/ns/ldp#');
 
-    return from(
-      this.fetcher.load(folder, {
-        force: true,
-        clearPreviousData: true
-      })
-    ).pipe(
-      map(() => this.fetcher.store.match(folder, LDP('contains'))),
+    return from(this.podService.getItem(folder)).pipe(
+      map(() => this.podService.store.match(folder, LDP('contains'))),
       map(res => res as any[])
     );
   }
@@ -102,7 +98,7 @@ export class FilesService {
           newFileName
         )}`;
 
-        return this.addFile(destinationUri, file.type, data);
+        return this.podService.createItem(destinationUri, file.type, data);
       })
     );
   }
@@ -111,27 +107,12 @@ export class FilesService {
     return of(foldername).pipe(
       withLatestFrom(this.currentFolder$),
       switchMap(([foldername, currentFolder]) =>
-        this.addItem(currentFolder, foldername)
+        this.podService.createFolder(currentFolder, foldername)
       )
     );
   }
 
-  private addFile(
-    filePath: string,
-    contentType: string,
-    data: string | ArrayBuffer | null
-  ) {
-    const doc = sym(filePath);
-    return from(this.fetcher.createIfNotExists(doc, contentType, data));
-  }
-
-  private addItem(currentFolder: string, folderName: string) {
-    const doc = sym(`${currentFolder}/`);
-    return from(this.fetcher.createContainer(doc, folderName));
-  }
-
   private deleteItem(filePath: string) {
-    const doc = sym(filePath);
-    return from(this.fetcher.delete(doc));
+    return this.podService.deleteItem(filePath);
   }
 }

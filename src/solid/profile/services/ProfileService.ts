@@ -1,8 +1,9 @@
-import { Fetcher, Namespace, st, sym, UpdateManager } from 'rdflib';
+import { Namespace, st, sym } from 'rdflib';
 import { combineLatest, from, merge, Observable, Subject } from 'rxjs';
 import { map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
 import { AuthService } from '../../auth/services/AuthService';
 import { fileReader } from '../../shared/operators/operators';
+import { PodService } from '../../shared/services/PodService';
 import { ProfileCard, UpdateProfileCard } from '../types/profile';
 
 export class ProfileService {
@@ -40,8 +41,7 @@ export class ProfileService {
   }
 
   constructor(
-    private fetcher: Fetcher,
-    private updateManager: UpdateManager,
+    private podService: PodService,
     private authService: AuthService
   ) {}
 
@@ -56,13 +56,16 @@ export class ProfileService {
   private getProfile(webId: string): Observable<ProfileCard> {
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
     const person = webId;
-    return from(this.fetcher.load(person)).pipe(
+    return this.podService.getItem(person).pipe(
       map(() => {
         const personSym = sym(person);
-        const fullName = this.fetcher.store.any(personSym, VCARD('fn'));
-        const hasPhoto = this.fetcher.store.any(personSym, VCARD('hasPhoto'));
-        const note = this.fetcher.store.any(personSym, VCARD('note'));
-        const organizationName = this.fetcher.store.any(
+        const fullName = this.podService.store.any(personSym, VCARD('fn'));
+        const hasPhoto = this.podService.store.any(
+          personSym,
+          VCARD('hasPhoto')
+        );
+        const note = this.podService.store.any(personSym, VCARD('note'));
+        const organizationName = this.podService.store.any(
           personSym,
           VCARD('organization-name')
         );
@@ -81,9 +84,8 @@ export class ProfileService {
       switchMap(data => {
         const fileBase = 'https://stottle.solid.community/profile';
         const destinationUri = `${fileBase}/${encodeURIComponent(file.name)}`;
-        const doc = sym(destinationUri);
 
-        return from(this.fetcher.createIfNotExists(doc, file.type, data)).pipe(
+        return this.podService.createItem(destinationUri, file.type, data).pipe(
           map(() => ({
             statement: 'hasPhoto',
             value: destinationUri
@@ -95,32 +97,16 @@ export class ProfileService {
 
   private updateProfile(statement: string, value: string) {
     const VCARD = Namespace('http://www.w3.org/2006/vcard/ns#');
-    const me = this.fetcher.store.sym(
+    const me = this.podService.store.sym(
       'https://stottle.solid.community/profile/card#me'
     );
     let ins = st(me, VCARD(statement), value, me.doc());
-    let del = this.fetcher.store.statementsMatching(
+    let del = this.podService.store.statementsMatching(
       me,
       VCARD(statement),
       null,
       me.doc()
     );
-    return this.update(del, ins).pipe(tap(console.log));
-  }
-
-  private update(del: any, ins: any) {
-    return new Observable<string>(observer => {
-      this.updateManager.update(
-        del,
-        ins,
-        (uri: string, ok: boolean, message: string) => {
-          if (ok) {
-            observer.next(message);
-          } else {
-            observer.error(message);
-          }
-        }
-      );
-    });
+    return this.podService.updateItem(del, ins).pipe(tap(console.log));
   }
 }
